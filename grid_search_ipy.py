@@ -10,18 +10,9 @@ from sklearn.externals import joblib
 from sklearn.cross_validation import check_cv
 from sklearn.base import is_classifier, clone
 from sklearn.utils.validation import _num_samples, check_arrays
-
-from sklearn.datasets import load_iris, fetch_20newsgroups
-from sklearn.cross_validation import KFold
-
-from sklearn.svm import SVC
-from sklearn.pipeline import Pipeline
-from sklearn.feature_extraction.text import TfidfVectorizer
-
 from sklearn.grid_search import ParameterGrid, BaseSearchCV, _check_param_grid
 
 DATA_FILENAME_TEMPLATE = 'data_%03d.npy'
-
 
 class OnProgressError(Exception):
     def __init__(self, value):
@@ -78,7 +69,6 @@ class IPyGridSearchCV(BaseSearchCV):
             self.save_dataset_filename(X, y, cv)
 
         dataset_filenames = self.dataset_filenames
-        print dataset_filenames
 
         client = Client()
         lb_view = client.load_balanced_view()
@@ -89,7 +79,6 @@ class IPyGridSearchCV(BaseSearchCV):
         self.tasks = [([lb_view.apply(evaluate, estimator, dataset_filename, params)
                         for dataset_filename in dataset_filenames], params)
                             for params in parameter_iterable]
-        print self.tasks
         if self.sync:
             self.wait()
             self.set_grid_scores()
@@ -97,8 +86,9 @@ class IPyGridSearchCV(BaseSearchCV):
 
             if self.refit:
                 self.set_best_estimator(estimator)
-
         return self
+
+
     def save_dataset_filename(self, X, y, cv):
         from sklearn.externals import joblib
         dataset_filenames = []
@@ -140,9 +130,11 @@ class IPyGridSearchCV(BaseSearchCV):
         self.best_estimator_ = best_estimator
 
 def create_clf():
+    from sklearn.svm import SVC
+    from sklearn.pipeline import Pipeline
+    from sklearn.feature_extraction.text import TfidfVectorizer
     clf = Pipeline([
         ('vect', TfidfVectorizer(
-    #                 stop_words=stop_words,
                     token_pattern=ur"\b[a-z0-9_\-\.]+[a-z][a-z0-9_\-\.]+\b",
         )),
         ('svc', SVC()),
@@ -150,11 +142,14 @@ def create_clf():
     return clf
 
 if __name__ == '__main__':
+    from sklearn.datasets import load_iris, fetch_20newsgroups
+    from sklearn.cross_validation import KFold
     news = fetch_20newsgroups(subset='all')
     n_samples = 3000
     X, y = news.data[:n_samples], news.target[:n_samples]
     cv = KFold(len(X), 4, shuffle=True, random_state=0)
     params = {'svc__gamma': np.logspace(-2, 1, 4), 'svc__C': np.logspace(-1, 1, 3)}
+
     estimator = create_clf()
     ipy_gridsearchcv = IPyGridSearchCV(estimator, params, cv=cv)
     ipy_gridsearchcv.fit(X, y)
