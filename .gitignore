@@ -1,3 +1,4 @@
 *.npy
 *.pyc
 *.project
+*.pydevproject

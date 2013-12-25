@@ -1,9 +1,6 @@
-"""
-Before starting this script, you should run this command
-$ ipcluster start
+"""Search over specified parameter in parallel on IPython
 """
 import os
-import glob
 import numpy as np
 from IPython.parallel import Client
 from sklearn.externals import joblib
@@ -90,7 +87,6 @@ class IPyGridSearchCV(BaseSearchCV):
 
 
     def save_dataset_filename(self, X, y, cv):
-        from sklearn.externals import joblib
         dataset_filenames = []
         for i, (train, test) in enumerate(cv):
             cv_fold = ([X[k] for k in train], y[train], [X[k] for k in test], y[test])
